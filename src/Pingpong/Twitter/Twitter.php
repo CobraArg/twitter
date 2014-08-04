@@ -443,6 +443,10 @@ class Twitter
         return $this->twitter->friends_list($params);
     }
 
+    public function getListsMembers(array $params = array()) {
+        return $this->twitter->lists_members($params);
+    }
+
     public function retweet($id = 0) {      
         return $this->twitter->__call('statuses_retweet_:id', $id);       
     }
