@@ -1,5 +1,6 @@
 <?php namespace Pingpong\Twitter;
 
+use Codebird\Codebird;
 use Illuminate\Support\ServiceProvider;
 
 class TwitterServiceProvider extends ServiceProvider {
@@ -12,32 +13,13 @@ class TwitterServiceProvider extends ServiceProvider {
 	protected $defer = false;
 
 	/**
-	 * Array providers.
-	 *
-	 * @var array
+	 * Boot the package.
+	 * 
+	 * @return void 
 	 */
-	protected $providers = array(
-		'twitter'	=>	'Pingpong\Twitter\Twitter'
-	);
-	
-	/**
-	 * Array facades.
-	 *
-	 * @var array
-	 */
-	protected $facades = array(
-		'Twitter'	=>	'Pingpong\Twitter\Facades\Twitter'
-	);
-
-	/**
-	 * Booting the service provider.
-	 *
-	 * @return void
-	 */
-
 	public function boot()
 	{
-		$this->package('pingpong/twitter', 'twitter');
+		$this->package('pingpong/twitter');
 	}
 
 	/**
@@ -47,41 +29,27 @@ class TwitterServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		$this->registerProviders();
-		$this->registerFacades();
-	}
-
-	/**
-	 * Register all service providers.
-	 *
-	 * @return void
-	 */
-	protected function registerProviders()
-	{
-		$providers = $this->providers;
-		foreach ($providers as $key => $value) {
-			$this->app[$key] = $this->app->share(function($app) use ($value)
-			{
-				return new $value($app);
-			});
-		}
-	}
-
-	/**
-	 * Register all facades.
-	 *
-	 * @return void
-	 */
-	protected function registerFacades()
-	{
-		$facades = $this->facades;
-		$this->app->booting(function() use ($facades)
+		$this->app['pingpong.twitter'] = $this->app->share(function($app)
 		{
-			$loader = \Illuminate\Foundation\AliasLoader::getInstance();
-			foreach ($facades as $key => $value) {
-				$loader->alias($key, $value);
-			}
-		});
+			$api = new Api;
+
+            $config = $app['config']->get('twitter::config');
+
+			return new Twitter(
+                $api,
+                $app['session.store'],
+                $app['config'],
+                $app['request'],
+                $app['redirect'],
+                $config['consumer_key'],
+                $config['consumer_secret'],
+                $config['oauth_token'],
+                $config['oauth_token_secret'],
+                $config['bearer_token'],
+                $config['callback_url'],
+                $config['fallback_url']
+            );
+		});	
 	}
 
 	/**
@@ -91,11 +59,7 @@ class TwitterServiceProvider extends ServiceProvider {
 	 */
 	public function provides()
 	{
-		$providers = array();
-		foreach ($this->providers as $key => $value) {
-			$providers[] = $key;
-		}
-		return $providers;
+		return array('pingpong.twitter');
 	}
 
 }
